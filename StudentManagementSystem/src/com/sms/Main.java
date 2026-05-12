@@ -55,4 +55,18 @@ public class Main {
         }
         scanner.close();
     }
+
+    private static void displayMenu() {
+        System.out.println("\n" + "-".repeat(50));
+        System.out.println("📚 STUDENT MANAGEMENT SYSTEM - MAIN MENU");
+        System.out.println("-".repeat(50));
+        System.out.println("1. ➕ Add New Student");
+        System.out.println("2. 👁️ View All Students");
+        System.out.println("3. 🔍 Search Student by ID");
+        System.out.println("4. ✏️ Update Student Information");
+        System.out.println("5. ❌ Delete Student");
+        System.out.println("6. 💾 Save/Load Data (Phase 5)");
+        System.out.println("0. 🚪 Exit");
+        System.out.println("-".repeat(50));
+    }
 }
