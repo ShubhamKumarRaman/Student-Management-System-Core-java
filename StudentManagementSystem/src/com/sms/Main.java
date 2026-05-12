@@ -109,4 +109,29 @@ public class Main {
         System.out.println("Student Details: " + newStudent.toString());
         pressEnterToContinue();
     }
+
+    //View All students
+    private static void viewAllStudents() {
+        System.out.println("\n" + "=".repeat(40));
+        System.out.println("All Students");
+        System.out.println("=".repeat(40));
+
+        if (studentList.isEmpty()) {
+            System.out.println("\nNo students found in the system!");
+            System.out.println("Please add Students using Option 1.");
+        } else {
+            System.out.println("\nTotal Students: " + studentList.size());
+            System.out.println("-".repeat(80));
+            System.out.printf("| %-10s | %-20s | %-5s | %-10s | %-25s |\n",
+                    "ID", "NAME", "AGE", "GRADE", "EMAIL");
+            System.out.println("-".repeat(80));
+
+            for (Student student : studentList) {
+                System.out.println(student.toFormattedString());
+            }
+            System.out.println("-".repeat(80));
+            System.out.println("Displayed " + studentList.size() + " student(s)");
+        }
+        pressEnterToContinue();
+    }
 }
