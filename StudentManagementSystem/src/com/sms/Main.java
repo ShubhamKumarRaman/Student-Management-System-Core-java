@@ -69,4 +69,44 @@ public class Main {
         System.out.println("0. 🚪 Exit");
         System.out.println("-".repeat(50));
     }
+
+    private static void addStudent() {
+        System.out.println("\n" + "=".repeat(40));
+        System.out.println("Add new Student");
+        System.out.println("=".repeat(40));
+
+        //Generate Student Id
+        System.out.println("\nChoose Id Option:");
+        System.out.println("1. Auto-generated ID");
+        System.out.println("2. Enter ID manually");
+        int idOption = getIntInput("Your Choice (1 or 2):");
+
+        String studentId;
+        if (idOption == 1) {
+            studentId = "STU" + String.format("%03d", idCounter++);
+            System.out.println("Auto-generated ID: " + studentId);
+        } else {
+            studentId = getStringInput("Enter Student ID (e.g., S001): ");
+            //Check if ID already exists
+            if (findStudentById(studentId) != null) {
+                System.out.println("Student with ID " + studentId + " already exists!");
+                pressEnterToContinue();
+                return;
+            }
+        }
+
+        //Get student details
+        String name = getStringInput("Enter Full Name: ");
+        int age = getIntInput("Enter Age: ");
+        String grade = getStringInput("Enter Grade (e.g., A, B+, 85%): ");
+        String email = getStringInput("Enter Email: ");
+
+        //Create and add Student
+        Student newStudent = new Student(studentId, name, age, grade, email);
+        studentList.add(newStudent);
+
+        System.out.println("Student added successfully");
+        System.out.println("Student Details: " + newStudent.toString());
+        pressEnterToContinue();
+    }
 }
