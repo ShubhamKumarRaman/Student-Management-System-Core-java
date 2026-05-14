@@ -267,4 +267,37 @@ public class Main {
 
         pressEnterToContinue();
     }
+
+    // Helper Methods
+
+    private static Student findStudentById(String id) {
+        for (Student student : studentList) {
+            if (student.getId().equalsIgnoreCase(id)) {
+                return student;
+            }
+        }
+        return null;
+    }
+
+    private static String getStringInput(String prompt) {
+        System.out.print(prompt + " ");
+        return Scanner.nextLine().trim();
+    }
+
+    private static int getIntInput(String prompt) {
+        while (true) {
+            try {
+                System.out.println(prompt);
+                int input = Integer.parseInt(scanner.nextLine().trim());
+                return input;
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid Input! Please enter a valid number. ");
+            }
+        }
+    }
+
+    private static void pressEnterToContinue() {
+        System.out.println("\nPress Enter to continue...");
+        scanner.nextLine();
+    }
 }
