@@ -28,8 +28,8 @@ public class Main {
                     addStudent();
                     break;
                 case 2:
-                viewAllStudents();
-                break;
+                    viewAllStudents();
+                    break;
                 case 3:
                     searchStudentById();
                     break;
@@ -229,6 +229,40 @@ public class Main {
         if (updateChoice >= 1 && updateChoice <= 5 && updateChoice != 0) {
             System.out.println("\n Updated information: ");
             System.out.println(student.toString());
+        }
+
+        pressEnterToContinue();
+    }
+
+    // Delete Student
+    private static void deleteStudent() {
+        System.out.println("\n" + "=".repeat(40));
+        System.out.println("Delete Student");
+        System.out.println("=".repeat(40));
+
+        String studentId = getStringInput("\nEnter Student ID to delete: ");
+        Student student = findStudentId(studentId);
+
+        if (student == null) {
+            System.out.println("\n Student with ID '" + studentId + "' not found!");
+            pressEnterToContinue();
+            return;
+        }
+
+        //Show Confirmation
+        System.out.println("\nWarning: You are about to delete this student: ");
+        System.out.println("-".repeat(40));
+        System.out.println(student.toString());
+        System.out.println("-".repeat(40));
+
+        System.out.println("\nAre you sure you want to delete? (Y/N): ");
+        String confirmation = scanner.nextLine().trim().toUpperCase();
+
+        if (confirmation.equals("Y") || confirmation.equals("YES")) {
+            studentList.remove(student);
+            System.out.println("\nStudent with ID: '" + studentId + "' has been deleted successfully. ");
+        } else {
+            System.out.println("\nDeletion cancelled. Student record is safe.");
         }
 
         pressEnterToContinue();
