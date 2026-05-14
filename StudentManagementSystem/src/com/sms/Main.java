@@ -27,7 +27,7 @@ public class Main {
                 case 1:
                     addStudent();
                     break;
-                case2:
+                case 2:
                 viewAllStudents();
                 break;
                 case 3:
@@ -41,7 +41,7 @@ public class Main {
                     break;
                 case 6:
                     System.out.println("Press Enter to continue");
-                    Scanner.nextLink();
+                    Scanner.nextLine();
                     break;
                 case 0:
                     running = false;
@@ -152,6 +152,85 @@ public class Main {
             System.out.println("\nStudent with ID: '" + studentId + "' not found!");
             System.out.println("Tip: Check the ID and try again.");
         }
+        pressEnterToContinue();
+    }
+
+    //    Update Student Information
+    private static void updateStudent() {
+        System.out.println("\n" + "=".repeat(40));
+        System.out.println("Update Student Information");
+        System.out.println("=".repeat(40));
+
+        String studentId = getStringInput("\nEnter Student Id to update: ");
+        Student student = findStudentById(studentId);
+
+        if (student == null) {
+            System.out.println("\nStudent with ID: '" + studentId + "' not found!");
+            pressEnterToContinue();
+            return;
+        }
+
+        // Display current information
+        System.out.println("\nCurrent information: ");
+        System.out.println("-".repeat(40));
+        System.out.println(student.toString());
+        System.out.println("-".repeat(40));
+
+        System.out.println("\nUpdate Options: ");
+        System.out.println("1. Update Name");
+        System.out.println("2. Update Age");
+        System.out.println("3. Update Grade");
+        System.out.println("4. Update Email");
+        System.out.println("5. Update All Fields");
+        System.out.println("0. Cancel");
+
+        int updateChoice = getIntInput("\nSelect field to update(0-5): ");
+
+        switch (updateChoice) {
+            case 1:
+                String newName = getStringInput("Enter New Name: ");
+                student.setName(newName);
+                System.out.println("Name updated successfully!");
+                break;
+            case 2:
+                int newAge = getIntInput("Enter New Age: ");
+                student.setAge(newAge);
+                System.out.println("Age updated successfully!");
+                break;
+            case 3:
+                String newGrade = getStringInput("Enter New Grade: ");
+                student.setGrade(newGrade);
+                System.out.println("Grade Updated successfully!");
+                break;
+            case 4:
+                String newEmail = getStringInput("Enter New Email: ");
+                student.setEmail(newEmail);
+                System.out.println("Email updated successfully!");
+                break;
+            case 5:
+                String updatedName = getStringInput("Enter New Name: ");
+                int updatedAge = getIntInput("Enter New Age: ");
+                String updatedGrade = getStringInput("Enter New Grade: ");
+                String updateEmail = getStringInput("Enter New Email: ");
+
+                student.setName(updatedName);
+                student.setAge(updatedAge);
+                student.setGrade(updatedGrade);
+                student.setEmail(updateEmail);
+
+                System.out.println("All fields updated successfully!");
+                break;
+            case 0:
+                System.out.println("Update Cancelled!");
+            default:
+                System.out.println("Invalid Option! No changes made.");
+        }
+
+        if (updateChoice >= 1 && updateChoice <= 5 && updateChoice != 0) {
+            System.out.println("\n Updated information: ");
+            System.out.println(student.toString());
+        }
+
         pressEnterToContinue();
     }
 }
