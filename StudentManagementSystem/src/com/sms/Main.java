@@ -122,8 +122,7 @@ public class Main {
         } else {
             System.out.println("\nTotal Students: " + studentList.size());
             System.out.println("-".repeat(80));
-            System.out.printf("| %-10s | %-20s | %-5s | %-10s | %-25s |\n",
-                    "ID", "NAME", "AGE", "GRADE", "EMAIL");
+            System.out.printf("| %-10s | %-20s | %-5s | %-10s | %-25s |\n", "ID", "NAME", "AGE", "GRADE", "EMAIL");
             System.out.println("-".repeat(80));
 
             for (Student student : studentList) {
@@ -131,6 +130,27 @@ public class Main {
             }
             System.out.println("-".repeat(80));
             System.out.println("Displayed " + studentList.size() + " student(s)");
+        }
+        pressEnterToContinue();
+    }
+
+    //    Search Student by ID
+    private static void searchStudentById() {
+        System.out.println("\n" + "=".repeat(40));
+        System.out.println("Search student by ID");
+        System.out.println("=".repeat(40));
+
+        String studentId = getStringInput("\nEnter student Id to search: ");
+        Student foundStudent = findStudentById(studentId);
+
+        if (foundStudent != null) {
+            System.out.println("\nStudent Found!");
+            System.out.println("-".repeat(50));
+            System.out.println(foundStudent.toString());
+            System.out.println("-".repeat(50));
+        } else {
+            System.out.println("\nStudent with ID: '" + studentId + "' not found!");
+            System.out.println("Tip: Check the ID and try again.");
         }
         pressEnterToContinue();
     }
