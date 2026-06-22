@@ -31,4 +31,14 @@ public class InvalidInputException extends Exception {
     public InvalidInputException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    /**
+     * Constructor with field name, reason, and cause
+     * @param fieldName The field that has invalid input
+     * @param reason The reason why the input is invalid
+     * @param cause The underlying cause of the exception
+     */
+    public InvalidInputException(String fieldName, String reason, Throwable cause) {
+        super("Invalid input for '" + fieldName + "': " + reason, cause);
+    }
 }
