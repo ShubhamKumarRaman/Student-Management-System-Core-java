@@ -2,15 +2,17 @@ package com.sms;
 
 import com.sms.model.Student;
 import com.sms.service.StudentService;
+import com.sms.service.FileStorageService;
 import com.sms.exception.StudentNotFoundException;
 import com.sms.exception.DuplicateStudentException;
 import com.sms.exception.InvalidInputException;
+import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
 
 /**
  * Main class - Entry point for the Student Management System CLI application
- * This version includes comprehensive exception handling (Phase 4).
+ * This version includes full file handling (Phase 5).
  */
 public class Main {
 
@@ -20,7 +22,11 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("=" .repeat(50));
         System.out.println("   WELCOME TO STUDENT MANAGEMENT SYSTEM");
+        System.out.println("   📁 Data will be automatically saved");
         System.out.println("=" .repeat(50));
+
+        // Show file status on startup
+        showFileStatus();
 
         boolean running = true;
 
@@ -46,17 +52,29 @@ public class Main {
                         deleteStudent();
                         break;
                     case 6:
-                        System.out.println("\n📁 Save/Load feature - Coming in Phase 5!");
-                        System.out.println("Press Enter to continue...");
-                        scanner.nextLine();
+                        fileManagementMenu();
+                        break;
+                    case 7:
+                        manualSave();
+                        break;
+                    case 8:
+                        manualLoad();
                         break;
                     case 0:
+                        // Save before exit
+                        try {
+                            System.out.println("\n💾 Saving data before exit...");
+                            studentService.saveData();
+                            System.out.println("✅ Data saved successfully!");
+                        } catch (IOException e) {
+                            System.out.println("❌ Error saving data: " + e.getMessage());
+                        }
                         running = false;
                         System.out.println("\n👋 Thank you for using Student Management System!");
                         System.out.println("Goodbye!");
                         break;
                     default:
-                        System.out.println("\n❌ Invalid choice! Please enter 0-6");
+                        System.out.println("\n❌ Invalid choice! Please enter 0-8");
                         pressEnterToContinue();
                 }
             } catch (Exception e) {
@@ -78,14 +96,41 @@ public class Main {
         System.out.println("3. 🔍 Search Student by ID");
         System.out.println("4. ✏️ Update Student Information");
         System.out.println("5. ❌ Delete Student");
-        System.out.println("6. 💾 Save/Load Data (Phase 5)");
-        System.out.println("0. 🚪 Exit");
+        System.out.println("6. 📁 File Management");
+        System.out.println("7. 💾 Manual Save");
+        System.out.println("8. 📂 Manual Load");
+        System.out.println("0. 🚪 Exit (Auto-save)");
+        System.out.println("-" .repeat(50));
+        System.out.println("💡 Auto-save is " +
+                (studentService.isAutoSaveEnabled() ? "✅ ENABLED" : "❌ DISABLED"));
+        System.out.println("📊 Total Students: " + studentService.getStudentCount());
         System.out.println("-" .repeat(50));
     }
 
     /**
-     * Feature 1: Add a new student with exception handling
+     * Show file status on startup
      */
+    private static void showFileStatus() {
+        try {
+            if (FileStorageService.dataFileExists()) {
+                long fileSize = FileStorageService.getFileSize();
+                String lastModified = FileStorageService.getLastModifiedTime();
+                System.out.println("\n📁 Data file found!");
+                System.out.println("   📄 File size: " + fileSize + " bytes");
+                System.out.println("   🕐 Last modified: " + lastModified);
+                System.out.println("   📊 Students loaded: " + studentService.getStudentCount());
+            } else {
+                System.out.println("\n📭 No existing data file found. Starting fresh.");
+            }
+            System.out.println("   💾 Auto-save: " +
+                    (studentService.isAutoSaveEnabled() ? "ENABLED" : "DISABLED"));
+        } catch (Exception e) {
+            System.out.println("⚠️ Could not read file status: " + e.getMessage());
+        }
+    }
+
+    // ========== ADD STUDENT (SAME AS PHASE 4) ==========
+
     private static void addStudent() {
         System.out.println("\n" + "=" .repeat(40));
         System.out.println("➕ ADD NEW STUDENT");
@@ -105,13 +150,11 @@ public class Main {
                 studentId = studentService.generateId();
                 System.out.println("✅ Auto-generated ID: " + studentId);
 
-                // Get student details with validation
                 name = getStringInput("Enter Full Name: ");
                 age = getIntInput("Enter Age: ");
                 grade = getStringInput("Enter Grade (e.g., A, B+, 85%): ");
                 email = getStringInput("Enter Email: ");
 
-                // Add student with validation (throws InvalidInputException)
                 Student newStudent = studentService.addStudent(name, age, grade, email);
                 System.out.println("\n✅ Student added successfully!");
                 System.out.println("📝 Student Details: " + newStudent.toString());
@@ -119,7 +162,6 @@ public class Main {
             } else if (idOption == 2) {
                 studentId = getStringInput("Enter Student ID (e.g., S001): ");
 
-                // Check if ID already exists
                 if (studentService.findStudentByIdSafe(studentId) != null) {
                     throw new DuplicateStudentException(studentId);
                 }
@@ -129,7 +171,6 @@ public class Main {
                 grade = getStringInput("Enter Grade (e.g., A, B+, 85%): ");
                 email = getStringInput("Enter Email: ");
 
-                // Validate using service method
                 studentService.validateStudentData(name, age, grade, email);
 
                 Student student = new Student(studentId, name, age, grade, email);
@@ -153,9 +194,8 @@ public class Main {
         pressEnterToContinue();
     }
 
-    /**
-     * Feature 2: View all students with exception handling
-     */
+    // ========== VIEW ALL STUDENTS ==========
+
     private static void viewAllStudents() {
         System.out.println("\n" + "=" .repeat(40));
         System.out.println("👁️ ALL STUDENTS");
@@ -173,9 +213,8 @@ public class Main {
         pressEnterToContinue();
     }
 
-    /**
-     * Feature 3: Search student by ID with exception handling
-     */
+    // ========== SEARCH STUDENT ==========
+
     private static void searchStudentById() {
         System.out.println("\n" + "=" .repeat(40));
         System.out.println("🔍 SEARCH STUDENT BY ID");
@@ -221,9 +260,8 @@ public class Main {
         pressEnterToContinue();
     }
 
-    /**
-     * Feature 4: Update student information with exception handling
-     */
+    // ========== UPDATE STUDENT ==========
+
     private static void updateStudent() {
         System.out.println("\n" + "=" .repeat(40));
         System.out.println("✏️ UPDATE STUDENT INFORMATION");
@@ -233,7 +271,6 @@ public class Main {
             String studentId = getStringInput("\nEnter Student ID to update: ");
             Student student = studentService.findStudentById(studentId);
 
-            // Display current information
             System.out.println("\n📌 Current Information:");
             System.out.println("-" .repeat(40));
             System.out.println(student.toString());
@@ -276,7 +313,6 @@ public class Main {
                     String updatedGrade = getStringInput("Enter New Grade: ");
                     String updatedEmail = getStringInput("Enter New Email: ");
 
-                    // Update all fields
                     studentService.updateStudent(studentId, updatedName,
                             Integer.parseInt(updatedAge), updatedGrade, updatedEmail);
                     System.out.println("✅ All fields updated successfully!");
@@ -309,9 +345,8 @@ public class Main {
         pressEnterToContinue();
     }
 
-    /**
-     * Feature 5: Delete student with exception handling
-     */
+    // ========== DELETE STUDENT ==========
+
     private static void deleteStudent() {
         System.out.println("\n" + "=" .repeat(40));
         System.out.println("❌ DELETE STUDENT");
@@ -321,7 +356,6 @@ public class Main {
             String studentId = getStringInput("\nEnter Student ID to delete: ");
             Student student = studentService.findStudentById(studentId);
 
-            // Show confirmation
             System.out.println("\n⚠️  WARNING: You are about to delete this student:");
             System.out.println("-" .repeat(40));
             System.out.println(student.toString());
@@ -347,13 +381,205 @@ public class Main {
         pressEnterToContinue();
     }
 
-    // ========== HELPER METHODS WITH INPUT VALIDATION ==========
+    // ========== FILE MANAGEMENT MENU (NEW) ==========
+
+    private static void fileManagementMenu() {
+        System.out.println("\n" + "=" .repeat(40));
+        System.out.println("📁 FILE MANAGEMENT");
+        System.out.println("=" .repeat(40));
+
+        System.out.println("\n1. 📄 View File Status");
+        System.out.println("2. 💾 Create Backup");
+        System.out.println("3. 🔄 Restore from Backup");
+        System.out.println("4. 📤 Export Data to Custom File");
+        System.out.println("5. 🗑️ Delete All Data Files");
+        System.out.println("6. ⚙️ Toggle Auto-Save");
+        System.out.println("0. 🔙 Back to Main Menu");
+
+        int choice = getIntInput("\nEnter your choice (0-6): ");
+
+        switch (choice) {
+            case 1:
+                viewFileStatus();
+                break;
+            case 2:
+                createBackup();
+                break;
+            case 3:
+                restoreFromBackup();
+                break;
+            case 4:
+                exportData();
+                break;
+            case 5:
+                deleteDataFiles();
+                break;
+            case 6:
+                toggleAutoSave();
+                break;
+            case 0:
+                System.out.println("🔙 Returning to main menu...");
+                break;
+            default:
+                System.out.println("❌ Invalid choice!");
+        }
+
+        pressEnterToContinue();
+    }
+
+    private static void viewFileStatus() {
+        System.out.println("\n📄 FILE STATUS");
+        System.out.println("-" .repeat(40));
+
+        try {
+            boolean exists = FileStorageService.dataFileExists();
+            System.out.println("📁 Data file exists: " + (exists ? "✅ Yes" : "❌ No"));
+
+            if (exists) {
+                long size = FileStorageService.getFileSize();
+                String lastModified = FileStorageService.getLastModifiedTime();
+                System.out.println("📊 File size: " + size + " bytes");
+                System.out.println("🕐 Last modified: " + lastModified);
+            }
+
+            boolean backupExists = FileStorageService.backupFileExists();
+            System.out.println("💾 Backup exists: " + (backupExists ? "✅ Yes" : "❌ No"));
+
+            System.out.println("💾 Auto-save: " +
+                    (studentService.isAutoSaveEnabled() ? "✅ ENABLED" : "❌ DISABLED"));
+            System.out.println("👥 Students in memory: " + studentService.getStudentCount());
+
+        } catch (IOException e) {
+            System.out.println("❌ Error reading file status: " + e.getMessage());
+        }
+    }
+
+    private static void createBackup() {
+        System.out.println("\n💾 CREATING BACKUP");
+        System.out.println("-" .repeat(40));
+
+        try {
+            FileStorageService.createBackup();
+        } catch (IOException e) {
+            System.out.println("❌ Error creating backup: " + e.getMessage());
+        }
+    }
+
+    private static void restoreFromBackup() {
+        System.out.println("\n🔄 RESTORE FROM BACKUP");
+        System.out.println("-" .repeat(40));
+        System.out.println("⚠️ WARNING: This will replace current data!");
+        System.out.print("Are you sure? (Y/N): ");
+        String confirm = scanner.nextLine().trim().toUpperCase();
+
+        if (confirm.equals("Y") || confirm.equals("YES")) {
+            boolean success = FileStorageService.restoreFromBackup();
+            if (success) {
+                try {
+                    studentService.loadData();
+                    System.out.println("✅ Data restored successfully!");
+                } catch (Exception e) {
+                    System.out.println("❌ Error loading restored data: " + e.getMessage());
+                }
+            }
+        } else {
+            System.out.println("❌ Restore cancelled.");
+        }
+    }
+
+    private static void exportData() {
+        System.out.println("\n📤 EXPORT DATA");
+        System.out.println("-" .repeat(40));
+
+        try {
+            String fileName = getStringInput("Enter export file name (e.g., export.txt): ");
+
+            // Ensure file has .txt extension
+            if (!fileName.endsWith(".txt")) {
+                fileName += ".txt";
+            }
+
+            List<Student> students = studentService.getAllStudents();
+            FileStorageService.exportToFile(students, fileName);
+
+        } catch (StudentNotFoundException e) {
+            System.out.println("❌ No students to export!");
+        } catch (IOException e) {
+            System.out.println("❌ Error exporting data: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("❌ Error: " + e.getMessage());
+        }
+    }
+
+    private static void deleteDataFiles() {
+        System.out.println("\n🗑️ DELETE DATA FILES");
+        System.out.println("-" .repeat(40));
+        System.out.println("⚠️ WARNING: This will delete all saved data!");
+        System.out.print("Are you sure? (Y/N): ");
+        String confirm = scanner.nextLine().trim().toUpperCase();
+
+        if (confirm.equals("Y") || confirm.equals("YES")) {
+            try {
+                FileStorageService.deleteAllDataFiles();
+                studentService.deleteAllStudents();
+                System.out.println("✅ All data files deleted and memory cleared!");
+            } catch (IOException e) {
+                System.out.println("❌ Error deleting files: " + e.getMessage());
+            }
+        } else {
+            System.out.println("❌ Deletion cancelled.");
+        }
+    }
+
+    private static void toggleAutoSave() {
+        boolean current = studentService.isAutoSaveEnabled();
+        studentService.setAutoSaveEnabled(!current);
+        System.out.println("✅ Auto-save is now " +
+                (studentService.isAutoSaveEnabled() ? "ENABLED" : "DISABLED"));
+    }
+
+    // ========== MANUAL SAVE/LOAD ==========
+
+    private static void manualSave() {
+        System.out.println("\n💾 MANUAL SAVE");
+        System.out.println("-" .repeat(40));
+
+        try {
+            studentService.saveData();
+        } catch (IOException e) {
+            System.out.println("❌ Error saving data: " + e.getMessage());
+        }
+    }
+
+    private static void manualLoad() {
+        System.out.println("\n📂 MANUAL LOAD");
+        System.out.println("-" .repeat(40));
+        System.out.println("⚠️ Warning: This will replace current data in memory!");
+        System.out.print("Continue? (Y/N): ");
+        String confirm = scanner.nextLine().trim().toUpperCase();
+
+        if (confirm.equals("Y") || confirm.equals("YES")) {
+            try {
+                studentService.loadData();
+                System.out.println("✅ Data loaded successfully!");
+            } catch (IOException e) {
+                System.out.println("❌ Error loading data: " + e.getMessage());
+            } catch (InvalidInputException e) {
+                System.out.println("❌ Invalid data in file: " + e.getMessage());
+            } catch (Exception e) {
+                System.out.println("❌ Unexpected error: " + e.getMessage());
+            }
+        } else {
+            System.out.println("❌ Load cancelled.");
+        }
+    }
+
+    // ========== HELPER METHODS ==========
 
     private static String getStringInput(String prompt) {
         System.out.print(prompt + " ");
         String input = scanner.nextLine().trim();
 
-        // Check for empty input and ask again
         while (input.isEmpty()) {
             System.out.println("❌ Input cannot be empty!");
             System.out.print(prompt + " ");
