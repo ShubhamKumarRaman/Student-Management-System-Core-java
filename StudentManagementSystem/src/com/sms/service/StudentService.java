@@ -4,22 +4,31 @@ import com.sms.model.Student;
 import com.sms.exception.StudentNotFoundException;
 import com.sms.exception.DuplicateStudentException;
 import com.sms.exception.InvalidInputException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * StudentService class handles all business logic and CRUD operations
  * for the Student Management System.
- * This version includes comprehensive exception handling (Phase 4).
+ * This version includes file handling integration (Phase 5).
  */
 public class StudentService {
 
     private ArrayList<Student> studentList;
     private int idCounter;
+    private boolean autoSaveEnabled = true;
 
     public StudentService() {
         this.studentList = new ArrayList<>();
         this.idCounter = 1;
+
+        // Try to load data on startup
+        try {
+            loadData();
+        } catch (Exception e) {
+            System.out.println("⚠️ Could not load data: " + e.getMessage());
+        }
     }
 
     public StudentService(ArrayList<Student> existingList) {
@@ -27,7 +36,65 @@ public class StudentService {
         this.idCounter = studentList.size() + 1;
     }
 
-    // ========== CRUD OPERATIONS WITH EXCEPTIONS ==========
+    // ========== FILE HANDLING METHODS ==========
+
+    /**
+     * Save all students to file
+     * @throws IOException if save fails
+     */
+    public void saveData() throws IOException {
+        FileStorageService.saveStudents(studentList);
+    }
+
+    /**
+     * Load students from file
+     * @throws IOException if load fails
+     * @throws InvalidInputException if data is invalid
+     */
+    public void loadData() throws IOException, InvalidInputException {
+        List<Student> loadedStudents = FileStorageService.loadStudents();
+        if (!loadedStudents.isEmpty()) {
+            studentList = new ArrayList<>(loadedStudents);
+            updateIdCounter();
+            System.out.println("✅ Loaded " + studentList.size() + " students from file.");
+        }
+    }
+
+    /**
+     * Auto-save data if enabled
+     */
+    private void autoSave() {
+        if (autoSaveEnabled && !studentList.isEmpty()) {
+            try {
+                FileStorageService.saveStudents(studentList);
+            } catch (IOException e) {
+                System.err.println("⚠️ Auto-save failed: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Update ID counter based on existing students
+     */
+    private void updateIdCounter() {
+        int maxId = 0;
+        for (Student student : studentList) {
+            String id = student.getId();
+            if (id.startsWith("STU")) {
+                try {
+                    int num = Integer.parseInt(id.substring(3));
+                    if (num > maxId) {
+                        maxId = num;
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore non-standard IDs
+                }
+            }
+        }
+        idCounter = maxId + 1;
+    }
+
+    // ========== CRUD OPERATIONS WITH AUTO-SAVE ==========
 
     /**
      * Add a new student with exception handling
@@ -39,12 +106,12 @@ public class StudentService {
             throw new IllegalArgumentException("Student cannot be null");
         }
 
-        // Check for duplicate ID
-        if (findStudentById(student.getId()) != null) {
+        if (findStudentByIdSafe(student.getId()) != null) {
             throw new DuplicateStudentException(student.getId());
         }
 
         studentList.add(student);
+        autoSave();
     }
 
     /**
@@ -59,12 +126,12 @@ public class StudentService {
     public Student addStudent(String name, int age, String grade, String email)
             throws InvalidInputException {
 
-        // Validate input
         validateStudentData(name, age, grade, email);
 
         String studentId = generateId();
         Student student = new Student(studentId, name, age, grade, email);
         studentList.add(student);
+        autoSave();
         return student;
     }
 
@@ -190,6 +257,8 @@ public class StudentService {
         if (email != null && !email.isEmpty()) {
             student.setEmail(email);
         }
+
+        autoSave();
     }
 
     /**
@@ -239,6 +308,8 @@ public class StudentService {
                 throw new InvalidInputException("Invalid field name: " + field +
                         ". Allowed fields: name, age, grade, email");
         }
+
+        autoSave();
     }
 
     /**
@@ -249,6 +320,7 @@ public class StudentService {
     public void deleteStudent(String id) throws StudentNotFoundException {
         Student student = findStudentById(id);
         studentList.remove(student);
+        autoSave();
     }
 
     /**
@@ -257,32 +329,19 @@ public class StudentService {
     public void deleteAllStudents() {
         studentList.clear();
         idCounter = 1;
+        autoSave();
     }
 
-    // ========== VALIDATION METHODS ==========
+    // ========== VALIDATION METHODS (SAME AS PHASE 4) ==========
 
-    /**
-     * Validate all student data
-     * @param name Student name
-     * @param age Student age
-     * @param grade Student grade
-     * @param email Student email
-     * @throws InvalidInputException if any validation fails
-     */
     public void validateStudentData(String name, int age, String grade, String email)
             throws InvalidInputException {
-
         validateName(name);
         validateAge(age);
         validateGrade(grade);
         validateEmail(email);
     }
 
-    /**
-     * Validate name
-     * @param name Student name
-     * @throws InvalidInputException if name is invalid
-     */
     private void validateName(String name) throws InvalidInputException {
         if (name == null || name.trim().isEmpty()) {
             throw new InvalidInputException("Name", "Name cannot be empty");
@@ -298,11 +357,6 @@ public class StudentService {
         }
     }
 
-    /**
-     * Validate age
-     * @param age Student age
-     * @throws InvalidInputException if age is invalid
-     */
     private void validateAge(int age) throws InvalidInputException {
         if (age < 5) {
             throw new InvalidInputException("Age", "Age must be at least 5 years old");
@@ -312,11 +366,6 @@ public class StudentService {
         }
     }
 
-    /**
-     * Validate grade
-     * @param grade Student grade
-     * @throws InvalidInputException if grade is invalid
-     */
     private void validateGrade(String grade) throws InvalidInputException {
         if (grade == null || grade.trim().isEmpty()) {
             throw new InvalidInputException("Grade", "Grade cannot be empty");
@@ -326,11 +375,6 @@ public class StudentService {
         }
     }
 
-    /**
-     * Validate email
-     * @param email Student email
-     * @throws InvalidInputException if email is invalid
-     */
     private void validateEmail(String email) throws InvalidInputException {
         if (email == null || email.trim().isEmpty()) {
             throw new InvalidInputException("Email", "Email cannot be empty");
@@ -341,7 +385,6 @@ public class StudentService {
             throw new InvalidInputException("Email", "Email cannot exceed 100 characters");
         }
 
-        // Basic email validation
         if (!emailTrimmed.contains("@") || !emailTrimmed.contains(".")) {
             throw new InvalidInputException("Email", "Email must contain '@' and '.'");
         }
@@ -350,7 +393,6 @@ public class StudentService {
             throw new InvalidInputException("Email", "Email cannot start or end with '@'");
         }
 
-        // More comprehensive email regex validation
         String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
         if (!emailTrimmed.matches(emailRegex)) {
             throw new InvalidInputException("Email", "Invalid email format. Example: name@domain.com");
@@ -359,35 +401,18 @@ public class StudentService {
 
     // ========== UTILITY METHODS ==========
 
-    /**
-     * Generate auto-incrementing student ID
-     * @return New student ID
-     */
     public String generateId() {
         return "STU" + String.format("%03d", idCounter++);
     }
 
-    /**
-     * Preview next ID without incrementing
-     * @return Next ID as string
-     */
     public String previewNextId() {
         return "STU" + String.format("%03d", idCounter);
     }
 
-    /**
-     * Get current ID counter value
-     * @return Current counter
-     */
     public int getIdCounter() {
         return idCounter;
     }
 
-    /**
-     * Get formatted student list
-     * @return Formatted table string
-     * @throws StudentNotFoundException if no students
-     */
     public String getFormattedStudentList() throws StudentNotFoundException {
         if (studentList.isEmpty()) {
             throw new StudentNotFoundException("No students found in the system", "");
@@ -407,5 +432,24 @@ public class StudentService {
         sb.append("✅ Displayed ").append(studentList.size()).append(" student(s)");
 
         return sb.toString();
+    }
+
+    // ========== FILE MANAGEMENT SETTINGS ==========
+
+    /**
+     * Enable or disable auto-save
+     * @param enabled true to enable auto-save, false to disable
+     */
+    public void setAutoSaveEnabled(boolean enabled) {
+        this.autoSaveEnabled = enabled;
+        System.out.println("Auto-save " + (enabled ? "enabled" : "disabled"));
+    }
+
+    /**
+     * Check if auto-save is enabled
+     * @return true if auto-save is enabled
+     */
+    public boolean isAutoSaveEnabled() {
+        return autoSaveEnabled;
     }
 }
